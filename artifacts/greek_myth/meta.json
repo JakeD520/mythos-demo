@@ -1,0 +1,20 @@
+{
+  "world_id": "greek_myth",
+  "manifold_version": 3,
+  "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "k": 8,
+  "T_accept": 1.0710117816925049,
+  "T_review": 1.1197352409362793,
+  "target_words": 100,
+  "overlap_words": 20,
+  "accept_q": 0.95,
+  "review_q": 0.99,
+  "num_chunks": 13,
+  "dim": 384,
+  "has_faiss_index": true,
+  "created_at": "2025-08-22T20:31:44Z",
+  "source_files": [
+    "odyssey_sample.txt",
+    "theogony_sample.txt"
+  ]
+}

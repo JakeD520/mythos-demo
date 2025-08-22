@@ -1,0 +1,21 @@
+{
+  "world_id": "vampire_cyberpunk",
+  "manifold_version": 1,
+  "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "k": 8,
+  "T_accept": 1.2031571865081787,
+  "T_review": 1.2096139192581177,
+  "target_words": 100,
+  "overlap_words": 20,
+  "accept_q": 0.95,
+  "review_q": 0.99,
+  "num_chunks": 9,
+  "dim": 384,
+  "has_faiss_index": true,
+  "created_at": "2025-08-22T20:31:47Z",
+  "source_files": [
+    "chrome_cathedral.txt",
+    "digital_blood.txt",
+    "neon_blood.txt"
+  ]
+}

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MythOS Editor - Live Worldliness Meter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 400px;
+            background: #f8f9fa;
+            border-left: 1px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .world-selector {
+            margin: 10px 0;
+        }
+
+        .world-selector select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            width: 200px;
+        }
+
+        .world-selector select option {
+            color: #333;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .document-meta {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .document-meta input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex: 1;
+        }
+
+        .editor-textarea {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .editor-textarea:focus {
+            border-color: #667eea;
+        }
+
+        .meter-panel {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .meter-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .iw-meter {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .iw-meter-fill {
+            height: 100%;
+            transition: width 0.5s ease, background-color 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .meter-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .decision-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .decision-accept { background: #d4edda; color: #155724; }
+        .decision-review { background: #fff3cd; color: #856404; }
+        .decision-reject { background: #f8d7da; color: #721c24; }
+
+        .neighbors-panel {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .neighbors-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .neighbor-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .neighbor-source {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .suggestions-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .suggestions-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .suggestion-item {
+            background: white;
+            border-left: 3px solid #667eea;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .actions {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .status-connected { background: #28a745; }
+        .status-disconnected { background: #dc3545; }
+        .status-pending { background: #ffc107; }
+
+        .world-stats {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Main Editor Panel -->
+        <div class="editor-panel">
+            <div class="header">
+                <h1>🏛️ MythOS Editor</h1>
+                <p>Live Worldliness Meter + Semantic Neighbors</p>
+                <div class="world-selector">
+                    <select id="worldSelect">
+                        <option value="">Select World...</option>
+                        <option value="greek-mythology">Greek Mythology</option>
+                        <option value="norse-mythology">Norse Mythology</option>
+                        <option value="custom-world">Custom World</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="connectToWorld()">Connect</button>
+                </div>
+                <div id="connectionStatus">
+                    <span class="status-indicator status-disconnected"></span>
+                    Disconnected
+                </div>
+            </div>
+
+            <div class="editor-container">
+                <div class="document-meta">
+                    <input type="text" id="docTitle" placeholder="Document Title" value="Untitled Epic">
+                    <input type="text" id="docAuthor" placeholder="Author" value="Anonymous Bard">
+                </div>
+
+                <textarea 
+                    id="editor" 
+                    class="editor-textarea" 
+                    placeholder="Begin writing your mythological tale... The meter will analyze your text in real-time for worldliness."
+                    oninput="onTextChange()"
+                    onselect="onCursorMove()"
+                    onclick="onCursorMove()"
+                ></textarea>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" onclick="saveDocument()">💾 Save Document</button>
+                <button class="btn btn-secondary" onclick="validateDocument()">✅ Validate World Fit</button>
+                <button class="btn btn-secondary" onclick="clearEditor()">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <!-- Sidebar with Meter and Neighbors -->
+        <div class="sidebar">
+            <!-- Live Meter -->
+            <div class="meter-panel">
+                <div class="meter-title">🎯 Live Worldliness Meter</div>
+                
+                <div class="iw-meter">
+                    <div id="iwMeterFill" class="iw-meter-fill" style="width: 0%; background: #e9ecef;"></div>
+                </div>
+                
+                <div class="meter-info">
+                    <span>IW Score: <strong id="iwScore">0.000</strong></span>
+                    <span id="iwDecision" class="decision-badge decision-review">READY</span>
+                </div>
+
+                <div class="world-stats" id="worldStats">
+                    Connect to a world to see statistics
+                </div>
+
+                <div class="loading" id="analysisLoading">
+                    🔍 Analyzing worldliness...
+                </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div class="suggestions-panel">
+                <div class="suggestions-title">💡 Writing Suggestions</div>
+                <div id="suggestions">
+                    <div class="suggestion-item">Connect to a world to get personalized suggestions</div>
+                </div>
+            </div>
+
+            <!-- Semantic Neighbors -->
+            <div class="neighbors-panel">
+                <div class="neighbors-title">🌐 Semantic Neighbors</div>
+                <div id="neighbors">
+                    <div class="neighbor-item">
+                        Write some text to see related content from your world...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentWorldId = null;
+        let analysisTimeout = null;
+        let connected = false;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default text
+            document.getElementById('editor').value = `In the ancient days when gods walked among mortals, there lived a hero whose name would echo through the ages. Zeus, the thunder-wielder, watched from his throne atop Mount Olympus as the young warrior faced trials that would test not only his strength, but his wisdom and courage.
+
+The hero's journey began at dawn, when Athena appeared to him in a dream, her grey eyes shining with divine purpose. "Brave one," she spoke, "a quest awaits that will determine the fate of both mortal and immortal realms."`;
+            
+            loadAvailableWorlds();
+        });
+
+        async function loadAvailableWorlds() {
+            try {
+                const response = await fetch('/worlds');
+                const data = await response.json();
+                
+                const select = document.getElementById('worldSelect');
+                select.innerHTML = '<option value="">Select World...</option>';
+                
+                for (const [worldId, status] of Object.entries(data.available_worlds)) {
+                    const option = document.createElement('option');
+                    option.value = worldId;
+                    option.textContent = `${worldId} (${status.chunks} chunks)`;
+                    if (!status.island_scorer) {
+                        option.textContent += ' - Needs Island';
+                    }
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Failed to load worlds:', error);
+            }
+        }
+
+        async function connectToWorld() {
+            const worldId = document.getElementById('worldSelect').value;
+            if (!worldId) {
+                alert('Please select a world first');
+                return;
+            }
+
+            updateConnectionStatus('pending', 'Connecting...');
+
+            try {
+                const response = await fetch('/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        world_id: worldId, 
+                        initialize_corpus: true 
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    currentWorldId = worldId;
+                    connected = true;
+                    
+                    updateConnectionStatus('connected', `Connected to ${worldId}`);
+                    updateWorldStats(result.prose_store_stats);
+                    
+                    // Initialize WebSocket
+                    initWebSocket(worldId);
+                    
+                    // Trigger initial analysis
+                    onTextChange();
+                } else {
+                    const error = await response.text();
+                    updateConnectionStatus('disconnected', `Failed: ${error}`);
+                }
+            } catch (error) {
+                updateConnectionStatus('disconnected', `Error: ${error.message}`);
+            }
+        }
+
+        function initWebSocket(worldId) {
+            if (ws) {
+                ws.close();
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/${worldId}`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+            };
+            
+            ws.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                
+                if (message.type === 'live_analysis') {
+                    updateMeterDisplay(message.data);
+                } else if (message.type === 'error') {
+                    showError(message.message);
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+                if (connected) {
+                    setTimeout(() => initWebSocket(worldId), 3000); // Reconnect
+                }
+            };
+        }
+
+        function onTextChange() {
+            if (!connected || !ws || ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            // Debounce analysis
+            if (analysisTimeout) {
+                clearTimeout(analysisTimeout);
+            }
+
+            analysisTimeout = setTimeout(() => {
+                const editor = document.getElementById('editor');
+                const text = editor.value;
+                const cursorPosition = editor.selectionStart;
+
+                if (text.trim()) {
+                    showLoading(true);
+                    
+                    ws.send(JSON.stringify({
+                        type: 'text_update',
+                        text: text,
+                        cursor_position: cursorPosition,
+                        context_window: 200
+                    }));
+                }
+            }, 1000); // 1 second debounce
+        }
+
+        function onCursorMove() {
+            // Trigger analysis on cursor movement for context updates
+            if (connected) {
+                onTextChange();
+            }
+        }
+
+        function updateMeterDisplay(data) {
+            showLoading(false);
+            
+            // Update IW meter
+            const score = data.iw_score;
+            const fill = document.getElementById('iwMeterFill');
+            const scoreElement = document.getElementById('iwScore');
+            const decisionElement = document.getElementById('iwDecision');
+            
+            scoreElement.textContent = score.toFixed(3);
+            
+            // Update meter fill and color
+            const percentage = Math.max(0, Math.min(100, score * 100));
+            fill.style.width = percentage + '%';
+            
+            // Color based on decision
+            if (data.decision === 'ACCEPT') {
+                fill.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+                decisionElement.className = 'decision-badge decision-accept';
+            } else if (data.decision === 'REVIEW') {
+                fill.style.background = 'linear-gradient(90deg, #ffc107, #fd7e14)';
+                decisionElement.className = 'decision-badge decision-review';
+            } else {
+                fill.style.background = 'linear-gradient(90deg, #dc3545, #e74c3c)';
+                decisionElement.className = 'decision-badge decision-reject';
+            }
+            
+            decisionElement.textContent = data.decision;
+            
+            // Update suggestions
+            updateSuggestions(data.suggestions);
+            
+            // Update neighbors
+            updateNeighbors(data.prose_neighbors);
+        }
+
+        function updateSuggestions(suggestions) {
+            const container = document.getElementById('suggestions');
+            container.innerHTML = '';
+            
+            if (suggestions && suggestions.length > 0) {
+                suggestions.forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = suggestion;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = '<div class="suggestion-item">No suggestions available</div>';
+            }
+        }
+
+        function updateNeighbors(neighbors) {
+            const container = document.getElementById('neighbors');
+            container.innerHTML = '';
+            
+            if (neighbors && neighbors.length > 0) {
+                neighbors.forEach(neighbor => {
+                    const div = document.createElement('div');
+                    div.className = 'neighbor-item';
+                    
+                    const text = neighbor.text.length > 120 
+                        ? neighbor.text.substring(0, 120) + '...' 
+                        : neighbor.text;
+                    
+                    div.innerHTML = `
+                        ${text}
+                        <div class="neighbor-source">from: ${neighbor.doc_id || 'unknown'}</div>
+                    `;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = '<div class="neighbor-item">No semantic neighbors found</div>';
+            }
+        }
+
+        function updateConnectionStatus(status, message) {
+            const statusElement = document.getElementById('connectionStatus');
+            const indicator = statusElement.querySelector('.status-indicator');
+            
+            indicator.className = `status-indicator status-${status}`;
+            statusElement.innerHTML = `<span class="status-indicator status-${status}"></span>${message}`;
+        }
+
+        function updateWorldStats(stats) {
+            const statsElement = document.getElementById('worldStats');
+            if (stats && !stats.error) {
+                statsElement.innerHTML = `
+                    📄 ${stats.document_count || 0} documents<br>
+                    📝 ${stats.span_count || 0} spans<br>
+                    🔗 ${stats.edge_count || 0} relationships<br>
+                    📊 ${stats.total_words || 0} words
+                `;
+            } else {
+                statsElement.innerHTML = 'World statistics unavailable';
+            }
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('analysisLoading');
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            
+            const container = document.querySelector('.meter-panel');
+            container.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.parentNode.removeChild(errorDiv);
+                }
+            }, 5000);
+        }
+
+        async function saveDocument() {
+            if (!connected) {
+                alert('Please connect to a world first');
+                return;
+            }
+
+            const title = document.getElementById('docTitle').value;
+            const author = document.getElementById('docAuthor').value;
+            const content = document.getElementById('editor').value;
+
+            if (!content.trim()) {
+                alert('Please write some content first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/save-document', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        world_id: currentWorldId,
+                        title: title,
+                        content: content,
+                        author: author,
+                        auto_validate: true
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`Document saved successfully!\nValidation: ${result.validation?.recommendation || 'Not available'}`);
+                } else {
+                    const error = await response.text();
+                    alert(`Failed to save: ${error}`);
+                }
+            } catch (error) {
+                alert(`Error saving document: ${error.message}`);
+            }
+        }
+
+        async function validateDocument() {
+            if (!connected) {
+                alert('Please connect to a world first');
+                return;
+            }
+
+            const content = document.getElementById('editor').value;
+            if (!content.trim()) {
+                alert('Please write some content first');
+                return;
+            }
+
+            // This would be a separate validation endpoint
+            alert('Document validation would show detailed paragraph-by-paragraph analysis here');
+        }
+
+        function clearEditor() {
+            if (confirm('Clear all content?')) {
+                document.getElementById('editor').value = '';
+                document.getElementById('docTitle').value = 'Untitled Epic';
+                document.getElementById('docAuthor').value = 'Anonymous Bard';
+                
+                // Reset meter
+                document.getElementById('iwMeterFill').style.width = '0%';
+                document.getElementById('iwScore').textContent = '0.000';
+                document.getElementById('iwDecision').textContent = 'READY';
+                document.getElementById('iwDecision').className = 'decision-badge decision-review';
+            }
+        }
+    </script>
+</body>
+</html>

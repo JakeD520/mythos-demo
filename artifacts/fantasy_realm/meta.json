@@ -1,0 +1,21 @@
+{
+  "world_id": "fantasy_realm",
+  "manifold_version": 1,
+  "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+  "k": 8,
+  "T_accept": 1.1967905759811401,
+  "T_review": 1.2053877115249634,
+  "target_words": 100,
+  "overlap_words": 20,
+  "accept_q": 0.95,
+  "review_q": 0.99,
+  "num_chunks": 9,
+  "dim": 384,
+  "has_faiss_index": true,
+  "created_at": "2025-08-22T20:31:45Z",
+  "source_files": [
+    "dragon_kingdoms.txt",
+    "elven_forest.txt",
+    "magic_wielders.txt"
+  ]
+}

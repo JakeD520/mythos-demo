@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MythOS Live Worldliness Meter - Working Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .editor-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .world-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .world-selector select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .editor-wrapper {
+            position: relative;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .editor-wrapper.accept { border-color: #4CAF50; }
+        .editor-wrapper.review { border-color: #FF9800; }
+        .editor-wrapper.reject { border-color: #f44336; }
+
+        #textEditor {
+            width: 100%;
+            height: 400px;
+            padding: 20px;
+            border: none;
+            outline: none;
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+        }
+
+        .analysis-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .meter-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .meter-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .worldliness-meter {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+
+        .meter-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                #f44336 0deg 108deg,
+                #FF9800 108deg 180deg,
+                #4CAF50 180deg 360deg
+            );
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .meter-inner {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .meter-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .meter-status {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        .meter-needle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 60px;
+            background: #333;
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%) rotate(0deg);
+            transition: transform 0.5s ease;
+        }
+
+        .meter-labels {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .analysis-details {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .reference-chunks {
+            background: #f0f7ff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e3f2fd;
+        }
+
+        .chunk-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chunk-header {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .chunk-text {
+            color: #333;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .chunk-meta {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .detail-section {
+            margin-bottom: 15px;
+        }
+
+        .detail-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .detail-content {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .test-examples {
+            background: #e3f2fd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .test-examples h3 {
+            margin-bottom: 15px;
+            color: #1976d2;
+        }
+
+        .test-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .test-button:hover {
+            background: #1976d2;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .connection-status.connected {
+            background: rgba(76, 175, 80, 0.9);
+        }
+
+        .connection-status.error {
+            background: rgba(244, 67, 54, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">
+        🔄 Connecting...
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ MythOS Live Worldliness Meter</h1>
+            <p>Real-time world consistency validation for mythological writing</p>
+            <div class="status-indicator">
+                <span class="live-indicator"></span>
+                LIVE DEMO - Island Scorer Integration
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="editor-section">
+                <div class="world-selector">
+                    <label for="worldSelect"><strong>World:</strong></label>
+                    <select id="worldSelect">
+                        <option value="greek_myth">Greek Mythology</option>
+                        <option value="fantasy_realm">Fantasy Realm</option>
+                        <option value="vampire_cyberpunk">Vampire Cyberpunk</option>
+                    </select>
+                    <span id="worldInfo">📊 Select a world to see chunk count</span>
+                </div>
+
+                <div class="editor-wrapper" id="editorWrapper">
+                    <textarea id="textEditor" placeholder="Start writing your mythological content here...
+
+Try typing:
+• Zeus threw thunderbolts from Mount Olympus
+• Spaceships landed on ancient Mars
+• Odysseus sailed the wine-dark sea"></textarea>
+                </div>
+
+                <div class="test-examples">
+                    <h3>🧪 Test Examples - Multi-Genre Showcase</h3>
+                    
+                    <h4 style="margin: 15px 0 10px 0; color: #1976d2; font-size: 14px;">⚡ Greek Mythology</h4>
+                    <button class="test-button" onclick="loadExample('zeus')">
+                        ⚡ Zeus & The Gods
+                    </button>
+                    <button class="test-button" onclick="loadExample('odysseus')">
+                        🌊 The Odyssey
+                    </button>
+                    
+                    <h4 style="margin: 15px 0 10px 0; color: #1976d2; font-size: 14px;">🧙‍♂️ Fantasy</h4>
+                    <button class="test-button" onclick="loadExample('dragon')">
+                        🐉 Dragons & Elves
+                    </button>
+                    <button class="test-button" onclick="loadExample('elfquest')">
+                        🏹 Elven Ranger
+                    </button>
+                    
+                    <h4 style="margin: 15px 0 10px 0; color: #1976d2; font-size: 14px;">🧛‍♂️ Vampire/Gothic</h4>
+                    <button class="test-button" onclick="loadExample('vampire')">
+                        🦇 Classic Vampire
+                    </button>
+                    <button class="test-button" onclick="loadExample('vampire_cyber')">
+                        💾 Cyberpunk Vampire
+                    </button>
+                    
+                    <h4 style="margin: 15px 0 10px 0; color: #1976d2; font-size: 14px;">🚀 Science Fiction</h4>
+                    <button class="test-button" onclick="loadExample('spaceship')">
+                        � Space Exploration
+                    </button>
+                    <button class="test-button" onclick="loadExample('cyberpunk')">
+                        🌃 Cyberpunk City
+                    </button>
+                    
+                    <h4 style="margin: 15px 0 10px 0; color: #1976d2; font-size: 14px;">💕 Romance</h4>
+                    <button class="test-button" onclick="loadExample('romcom')">
+                        ☕ Coffee Shop Meet-Cute
+                    </button>
+                    
+                    <h4 style="margin: 15px 0 10px 0; color: #1976d2; font-size: 14px;">👻 Horror & 🤠 Western</h4>
+                    <button class="test-button" onclick="loadExample('horror')">
+                        �️ Haunted House
+                    </button>
+                    <button class="test-button" onclick="loadExample('western')">
+                        🔫 Wild West Showdown
+                    </button>
+                </div>
+            </div>
+
+            <div class="analysis-panel">
+                <div class="meter-container">
+                    <div class="meter-title">Worldliness Score</div>
+                    <div class="worldliness-meter">
+                        <div class="meter-circle">
+                            <div class="meter-inner">
+                                <div class="meter-score" id="meterScore">---</div>
+                                <div class="meter-status" id="meterStatus">READY</div>
+                                <div class="meter-needle" id="meterNeedle"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="meter-labels">
+                        <span style="color: #f44336;">REJECT</span>
+                        <span style="color: #FF9800;">REVIEW</span>
+                        <span style="color: #4CAF50;">ACCEPT</span>
+                    </div>
+                </div>
+
+                <div class="analysis-details">
+                    <div class="detail-section">
+                        <div class="detail-title">📏 Distance Score</div>
+                        <div class="detail-content" id="distanceScore">Waiting for input...</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-title">🎯 Nearest References</div>
+                        <div class="detail-content" id="nearestRefs">Type something to see similar mythology content</div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-title">💡 Suggestions</div>
+                        <div class="detail-content" id="suggestions">Real-time writing suggestions will appear here</div>
+                    </div>
+                </div>
+
+                <div class="reference-chunks">
+                    <div class="detail-title">📚 Reference Chunks</div>
+                    <button class="test-button" onclick="loadReferenceChunks()" style="margin-bottom: 15px;">
+                        📖 View All Reference Chunks
+                    </button>
+                    <div class="detail-content" id="referenceChunks" style="max-height: 300px; overflow-y: auto; display: none;">
+                        Loading reference chunks...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MythOSDemo {
+            constructor() {
+                this.textEditor = document.getElementById('textEditor');
+                this.connectionStatus = document.getElementById('connectionStatus');
+                this.currentWorld = 'greek_myth';
+                this.debounceTimer = null;
+                this.islandScorerUrl = 'http://localhost:8000';
+                
+                // World configurations
+                this.worldConfigs = {
+                    'greek_myth': {
+                        name: 'Greek Mythology',
+                        chunks: 13,
+                        description: 'Ancient gods, heroes, and epic tales'
+                    },
+                    'fantasy_realm': {
+                        name: 'Fantasy Realm', 
+                        chunks: 9,
+                        description: 'Elves, dragons, and magical adventures'
+                    },
+                    'vampire_cyberpunk': {
+                        name: 'Vampire Cyberpunk',
+                        chunks: 9, 
+                        description: 'Digital bloodsuckers and neon nights'
+                    }
+                };
+                
+                this.initializeUI();
+                this.checkConnection();
+            }
+
+            initializeUI() {
+                // Text editor event listener with debouncing
+                this.textEditor.addEventListener('input', () => {
+                    clearTimeout(this.debounceTimer);
+                    this.debounceTimer = setTimeout(() => {
+                        this.analyzeText();
+                    }, 1000); // 1 second delay
+                });
+
+                // World selector
+                document.getElementById('worldSelect').addEventListener('change', (e) => {
+                    this.currentWorld = e.target.value;
+                    this.updateWorldInfo();
+                    this.analyzeText();
+                });
+
+                // Initialize world info display
+                this.updateWorldInfo();
+            }
+
+            async checkConnection() {
+                try {
+                    const response = await fetch(`${this.islandScorerUrl}/health`);
+                    if (response.ok) {
+                        this.updateConnectionStatus('connected', '✅ Island Scorer Connected');
+                    } else {
+                        this.updateConnectionStatus('error', '❌ Island Scorer Error');
+                    }
+                } catch (error) {
+                    this.updateConnectionStatus('error', '❌ Connection Failed');
+                }
+            }
+
+            updateConnectionStatus(status, message) {
+                this.connectionStatus.className = `connection-status ${status}`;
+                this.connectionStatus.textContent = message;
+            }
+
+            updateWorldInfo() {
+                const config = this.worldConfigs[this.currentWorld];
+                const worldInfo = document.getElementById('worldInfo');
+                if (config) {
+                    worldInfo.textContent = `📊 ${config.chunks} reference chunks loaded`;
+                    worldInfo.title = config.description;
+                }
+            }
+
+            async analyzeText() {
+                const text = this.textEditor.value.trim();
+                
+                if (!text) {
+                    this.resetMeter();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${this.islandScorerUrl}/score`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            world_id: this.currentWorld,
+                            text: text
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        this.updateMeter(result);
+                        this.updateConnectionStatus('connected', '✅ Analysis Complete');
+                    } else {
+                        console.error('Analysis failed:', response.status);
+                        this.updateConnectionStatus('error', '❌ Analysis Failed');
+                    }
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    this.updateConnectionStatus('error', '❌ Connection Error');
+                }
+            }
+
+            updateMeter(result) {
+                const score = result.iw_score;
+                const status = result.status;
+                const distance = result.distance;
+                const neighbors = result.neighbors || [];
+
+                // Update meter display
+                document.getElementById('meterScore').textContent = score.toFixed(3);
+                document.getElementById('meterStatus').textContent = status;
+
+                // Update meter needle (0-360 degrees, where 180 is center)
+                const angle = (score * 360) - 180; // Convert 0-1 score to -180 to 180 degrees
+                document.getElementById('meterNeedle').style.transform = 
+                    `translate(-50%, -100%) rotate(${angle}deg)`;
+
+                // Update editor border color
+                const wrapper = document.getElementById('editorWrapper');
+                wrapper.className = 'editor-wrapper ' + status.toLowerCase();
+
+                // Update analysis details
+                document.getElementById('distanceScore').textContent = 
+                    `${distance.toFixed(4)} (Lower is more consistent)`;
+
+                // Show nearest references with more detail
+                if (neighbors.length > 0) {
+                    const nearestRefs = neighbors.slice(0, 3).map((n, i) => 
+                        `${i + 1}. "${n.text.substring(0, 150)}..."\\n   📏 Distance: ${n.distance.toFixed(3)} | 📄 Source: ${n.source}\\n`
+                    ).join('\\n');
+                    
+                    document.getElementById('nearestRefs').textContent = nearestRefs;
+                } else {
+                    document.getElementById('nearestRefs').textContent = 'No similar references found';
+                }
+
+                // Generate suggestions
+                let suggestions = this.generateSuggestions(score, status, neighbors);
+                document.getElementById('suggestions').textContent = suggestions;
+            }
+
+            generateSuggestions(score, status, neighbors) {
+                if (status === 'ACCEPT') {
+                    return "✅ Great! This content fits well with Greek mythology. Consider expanding on the mythological themes.";
+                } else if (status === 'REVIEW') {
+                    return "⚠️ This content has mixed consistency. Try incorporating more traditional mythological elements or references to gods and heroes.";
+                } else {
+                    return "❌ This content doesn't fit well with Greek mythology. Consider using more mythological characters, locations, or themes from ancient Greek stories.";
+                }
+            }
+
+            resetMeter() {
+                document.getElementById('meterScore').textContent = '---';
+                document.getElementById('meterStatus').textContent = 'READY';
+                document.getElementById('meterNeedle').style.transform = 
+                    'translate(-50%, -100%) rotate(0deg)';
+                document.getElementById('editorWrapper').className = 'editor-wrapper';
+                document.getElementById('distanceScore').textContent = 'Waiting for input...';
+                document.getElementById('nearestRefs').textContent = 'Type something to see similar mythology content';
+                document.getElementById('suggestions').textContent = 'Real-time writing suggestions will appear here';
+            }
+        }
+
+        // Test examples
+        function loadExample(type) {
+            const examples = {
+                // Mythology
+                zeus: "Zeus, the mighty king of the gods, ruled from his throne atop Mount Olympus. With thunderbolts forged by the Cyclops, he maintained order among both mortals and immortals. His brothers Poseidon and Hades controlled the seas and underworld, while Zeus commanded the sky and weather.",
+                odysseus: "Tell me, Muse, of Odysseus, that man of many wiles, who wandered far and wide after he had sacked the sacred citadel of Troy. Many were the cities whose people he saw and whose minds he learned, and many the woes he suffered in his heart while on the sea.",
+                
+                // Fantasy
+                dragon: "The ancient dragon Smaug coiled around his hoard of gold, his emerald scales gleaming in the torchlight. Elven warriors gathered at the forest's edge, their silver arrows blessed by moonlight magic. The wizard's staff pulsed with arcane energy as he chanted the spell of binding.",
+                elfquest: "Through the enchanted forest of Silverleaf, the elven ranger Aelindra tracked the shadow wolves. Her bow sang with each arrow, each shot guided by the ancient magic flowing through her veins. The crystal pendant at her throat glowed with protective ward-light.",
+                
+                // Vampire/Gothic
+                vampire: "Count Dracula descended the castle stairs, his crimson eyes reflecting centuries of hunger. The moonlight streaming through stained glass windows cast bloody shadows across the stone floor. His fangs gleamed as he sensed the warm pulse of mortal blood nearby.",
+                vampire_cyber: "The vampire hacker's augmented eyes glowed red in the neon-lit server room. Neural implants buzzed as she interfaced with the digital bloodstream, draining data like life force. Chrome fangs clicked against her lower lip as she smiled at the successful hack.",
+                
+                // Science Fiction
+                spaceship: "The sleek starship Prometheus descended through Earth's atmosphere, its quantum engines humming with alien technology. Captain Sarah Chen checked the navigation display as they approached the landing coordinates. The crew prepared for first contact with the ancient civilization they had detected.",
+                cyberpunk: "Rain slicked the neon-soaked streets of Neo-Tokyo as the corporate samurai drew his mono-molecular blade. Holographic advertisements flickered in the smog-choked air while underground hackers jacked into the neural net, their consciousness bleeding into cyberspace.",
+                
+                // Romance/RomCom
+                romcom: "Sarah spilled her latte all over the handsome stranger's laptop at the coffee shop. As she frantically apologized with napkins, he just laughed and said it was the best thing that happened to him all week. Their eyes met over the caffeine-stained keyboard, and she felt her heart skip a beat.",
+                
+                // Horror
+                horror: "The old Victorian house groaned in the wind as Detective Martinez climbed the creaking stairs. Each step echoed through the abandoned halls where three families had mysteriously vanished. Behind the basement door, something scratched at the wood with long, deliberate claws.",
+                
+                // Western
+                western: "Sheriff McCready adjusted his hat brim against the desert sun, his hand resting on the worn grip of his Colt .45. The outlaw gang would ride into Tombstone at high noon, and he'd be waiting. Dust devils danced across the empty street as tumbleweeds rolled past the saloon doors."
+            };
+            
+            document.getElementById('textEditor').value = examples[type];
+            
+            // Trigger analysis
+            if (window.mythosDemo) {
+                window.mythosDemo.analyzeText();
+            }
+        }
+
+        // Load and display all reference chunks
+        async function loadReferenceChunks() {
+            const chunksContainer = document.getElementById('referenceChunks');
+            
+            // Show the container
+            chunksContainer.style.display = 'block';
+            chunksContainer.innerHTML = '<p>🔄 Loading reference chunks from Island Scorer...</p>';
+            
+            try {
+                // Test scoring with a sample to get neighbors (which shows us the reference chunks)
+                const response = await fetch('http://localhost:8000/score', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        world_id: 'greek_myth',
+                        text: 'Zeus Poseidon Hades gods mythology ancient Greece heroes Odysseus Troy Olympus'
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const neighbors = result.neighbors || [];
+                    
+                    if (neighbors.length > 0) {
+                        let chunksHtml = `<p><strong>📊 Found ${neighbors.length} reference chunks in the Greek Mythology world:</strong></p>`;
+                        
+                        neighbors.forEach((chunk, index) => {
+                            chunksHtml += `
+                                <div class="chunk-item">
+                                    <div class="chunk-header">
+                                        📝 Chunk #${chunk.span_id || index + 1} - ${chunk.source || 'Unknown Source'}
+                                    </div>
+                                    <div class="chunk-text">
+                                        "${chunk.text}"
+                                    </div>
+                                    <div class="chunk-meta">
+                                        💡 This chunk helps the AI understand Greek mythology themes and content
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        chunksHtml += `
+                            <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                                <strong>ℹ️ How it works:</strong> When you type, the AI compares your text to these reference chunks using semantic similarity. 
+                                The closer your writing is to these mythology pieces, the higher your worldliness score!
+                            </div>
+                        `;
+                        
+                        chunksContainer.innerHTML = chunksHtml;
+                    } else {
+                        chunksContainer.innerHTML = '<p>❌ No reference chunks found. The world might not be properly loaded.</p>';
+                    }
+                } else {
+                    chunksContainer.innerHTML = '<p>❌ Failed to load reference chunks. Check if Island Scorer is running.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading chunks:', error);
+                chunksContainer.innerHTML = '<p>❌ Connection error. Make sure Island Scorer is running on localhost:8000</p>';
+            }
+        }
+
+        // Initialize the demo when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            window.mythosDemo = new MythOSDemo();
+        });
+    </script>
+</body>
+</html>
